@@ -1,0 +1,90 @@
+[
+  {
+    "id": 1,
+    "title": "HackMUJ 24-Hour Hackathon",
+    "club": "acm",
+    "category": "Tech",
+    "date": "2026-11-14T09:00:00",
+    "venue": "AB-1 Seminar Hall",
+    "capacity": 120,
+    "tags": ["hackathon", "coding", "prizes"],
+    "description": "Teams of up to four build a working prototype in 24 hours. Mentors from industry, food all night and prizes for the top three teams. Bring your laptop and charger."
+  },
+  {
+    "id": 2,
+    "title": "Golden Hour Photo Walk",
+    "club": "aperture",
+    "category": "Arts",
+    "date": "2026-11-08T16:30:00",
+    "venue": "Main Gate (meeting point)",
+    "capacity": 40,
+    "tags": ["photography", "outdoor"],
+    "description": "A guided walk around campus during golden hour. Learn composition and exposure basics on the go. Phone cameras are welcome; a few club cameras will be available to borrow."
+  },
+  {
+    "id": 3,
+    "title": "Intro to Arduino Workshop",
+    "club": "ieee",
+    "category": "Workshop",
+    "date": "2026-11-21T14:00:00",
+    "venue": "Electronics Lab, AB-2",
+    "capacity": 30,
+    "tags": ["robotics", "hands-on"],
+    "description": "Build your first circuit and program an Arduino to blink, sense and respond. All kits are provided, and no prior electronics experience is needed."
+  },
+  {
+    "id": 4,
+    "title": "Inter-Department Debate",
+    "club": "litsoc",
+    "category": "Cultural",
+    "date": "2026-11-28T11:00:00",
+    "venue": "Sharda Pai Auditorium",
+    "capacity": 200,
+    "tags": ["debate", "public speaking"],
+    "description": "Departments face off in a parliamentary-style debate. Register as a speaker or come to watch and vote for the audience-choice award."
+  },
+  {
+    "id": 5,
+    "title": "Open Mic Night",
+    "club": "music",
+    "category": "Cultural",
+    "date": "2026-12-05T18:30:00",
+    "venue": "Student Activity Centre",
+    "capacity": 150,
+    "tags": ["music", "poetry", "comedy"],
+    "description": "Sing, play, recite or do stand-up. Five-minute slots, a friendly crowd and free chai. Performers should register; listeners can just turn up."
+  },
+  {
+    "id": 6,
+    "title": "Web Dev Bootcamp: Build Your Portfolio",
+    "club": "acm",
+    "category": "Workshop",
+    "date": "2026-12-12T10:00:00",
+    "venue": "Lab 3, AB-1",
+    "capacity": 60,
+    "tags": ["html", "css", "javascript"],
+    "description": "A full-day bootcamp on HTML, CSS and JavaScript. You will leave with a deployed personal portfolio site."
+  },
+  {
+    "id": 7,
+    "title": "Inter-Hostel Football Cup",
+    "club": "sports",
+    "category": "Sports",
+    "date": "2026-12-19T07:30:00",
+    "venue": "Main Football Ground",
+    "capacity": 160,
+    "tags": ["football", "tournament"],
+    "description": "Seven-a-side knockout tournament between hostel teams. Captains register on behalf of their squad of up to 10 players."
+  },
+  {
+    "id": 8,
+    "title": "Freshers' Photography Contest",
+    "club": "aperture",
+    "category": "Arts",
+    "date": "2026-10-10T10:00:00",
+    "venue": "Online submission",
+    "capacity": 100,
+    "tags": ["contest", "photography"],
+    "description": "Theme: 'First Week at MUJ'. Submissions are closed and results have been announced on the club page."
+  }
+]

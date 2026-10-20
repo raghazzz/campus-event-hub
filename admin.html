@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin — Campus Event Hub</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@700;900&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+  <nav class="navbar">
+    <div class="container">
+      <a href="index.html" class="logo">Campus<b>/</b>Hub</a>
+      <div class="nav-links">
+        <a href="index.html">Events</a>
+        <a href="admin.html" class="active">Admin</a>
+        <button class="icon-btn" id="themeToggle" title="Switch light / dark">Light</button>
+      </div>
+    </div>
+  </nav>
+
+  <main class="container">
+
+    <!-- Login form (shown when not logged in) -->
+    <section id="loginSection" class="form-wrap hidden" style="max-width:420px; margin-top:64px;">
+      <div class="form-card">
+        <h1>Admin login</h1>
+        <p class="form-sub">Organisers only. Sign in to see registrations.</p>
+        <div class="alert alert-error hidden" id="loginError"></div>
+        <form id="loginForm">
+          <div class="field" style="margin-bottom:14px;">
+            <label for="username">Username</label>
+            <input id="username" autocomplete="username" required>
+          </div>
+          <div class="field">
+            <label for="password">Password</label>
+            <input id="password" type="password" autocomplete="current-password" required>
+          </div>
+          <button type="submit" class="btn btn-primary">Log in</button>
+        </form>
+      </div>
+    </section>
+
+    <!-- Dashboard (shown after login) -->
+    <section id="dashboard" class="hidden">
+      <div class="admin-head">
+        <div>
+          <h1>Registrations</h1>
+          <p class="form-sub" id="welcomeText" style="margin:4px 0 0;"></p>
+        </div>
+        <div style="display:flex; gap:8px; flex-wrap:wrap;">
+          <button class="btn btn-ghost" id="exportBtn">⬇ Export CSV</button>
+          <button class="btn btn-ghost" id="logoutBtn">Log out</button>
+        </div>
+      </div>
+
+      <div class="kpis">
+        <div class="kpi"><span>Total registrations</span><strong id="kpiTotal">0</strong></div>
+        <div class="kpi"><span>Events with sign-ups</span><strong id="kpiEvents">0</strong></div>
+        <div class="kpi"><span>Most popular event</span><strong id="kpiTop" style="font-size:1.1rem;">–</strong><small id="kpiTopCount"></small></div>
+      </div>
+
+      <div class="toolbar">
+        <div class="toolbar-row">
+          <label class="search" style="flex:1; min-width:220px; box-shadow:none;">
+            <span>&gt;</span>
+            <input type="search" id="adminSearch" placeholder="Search name, reg. no. or email…">
+          </label>
+          <select class="select" id="eventFilter"><option value="all">All events</option></select>
+        </div>
+      </div>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>#</th><th>Name</th><th>Reg. No.</th><th>Event</th><th>Dept / Year</th>
+              <th>Email</th><th>Phone</th><th>Registered</th><th></th>
+            </tr>
+          </thead>
+          <tbody id="regTable"></tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <footer><div class="container">Campus/Hub — Manipal University Jaipur</div></footer>
+
+  <script src="js/common.js"></script>
+  <script src="js/admin.js"></script>
+</body>
+</html>

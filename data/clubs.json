@@ -1,0 +1,8 @@
+[
+  {"id": "acm", "name": "MUJ ACM", "color": "#d4ff3a", "about": "Coding, hackathons and tech talks."},
+  {"id": "aperture", "name": "Aperture", "color": "#ff3d8b", "about": "The photography club of MUJ."},
+  {"id": "ieee", "name": "IEEE MUJ", "color": "#22c3e6", "about": "Electronics, robotics and research."},
+  {"id": "litsoc", "name": "Literary Society", "color": "#9b7bff", "about": "Debates, MUNs, poetry and quizzes."},
+  {"id": "music", "name": "Music Club", "color": "#ff5a1f", "about": "Jams, open mics and band nights."},
+  {"id": "sports", "name": "Sports Council", "color": "#2fd47a", "about": "Tournaments and fitness events."}
+]

@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Campus Event Hub — MUJ</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@700;900&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+  <div class="ticker" aria-hidden="true"><div class="ticker-track" id="ticker"></div></div>
+
+  <nav class="navbar">
+    <div class="container">
+      <a href="index.html" class="logo">Campus<b>/</b>Hub</a>
+      <div class="nav-links">
+        <a href="index.html" class="active">Events</a>
+        <a href="admin.html">Admin</a>
+        <button class="icon-btn" id="themeToggle" title="Switch light / dark">Light</button>
+      </div>
+    </div>
+  </nav>
+
+  <main>
+    <section class="hero container">
+      <span class="label">Manipal University Jaipur · All club events</span>
+      <h1><span>What's</span><span class="outline">on at</span><span class="accent">MUJ.</span></h1>
+      <div class="sticker"><div><strong id="stickerCount">–</strong>events<br>coming up</div></div>
+      <p>Hackathons, photo walks, workshops, open mics and debates from every MUJ club. Grab a seat before they're gone.</p>
+      <div class="stats">
+        <div class="stat"><strong id="statUpcoming">–</strong><span>Upcoming events</span></div>
+        <div class="stat"><strong id="statClubs">–</strong><span>Clubs</span></div>
+        <div class="stat"><strong id="statRegs">–</strong><span>Registrations</span></div>
+      </div>
+    </section>
+
+    <section class="container">
+      <div class="toolbar">
+        <label class="search">
+          <span>&gt;</span>
+          <input type="search" id="searchInput" placeholder="search events, clubs, venues or tags_">
+        </label>
+        <div class="chips" id="categoryChips"></div>
+        <div class="toolbar-row">
+          <span class="result-count" id="resultCount"></span>
+          <div style="display:flex; gap:8px; flex-wrap:wrap;">
+            <select class="select" id="clubFilter"><option value="all">All clubs</option></select>
+            <select class="select" id="timeFilter">
+              <option value="upcoming">Upcoming</option>
+              <option value="past">Past</option>
+              <option value="all">All events</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <div class="grid" id="eventGrid">
+        <p class="empty">Loading events…</p>
+      </div>
+    </section>
+  </main>
+
+  <footer><div class="container">Campus/Hub — Manipal University Jaipur</div></footer>
+
+  <script src="js/common.js"></script>
+  <script src="js/home.js"></script>
+</body>
+</html>

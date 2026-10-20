@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Register — Campus Event Hub</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@700;900&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+  <nav class="navbar">
+    <div class="container">
+      <a href="index.html" class="logo">Campus<b>/</b>Hub</a>
+      <div class="nav-links">
+        <a href="index.html" class="active">Events</a>
+        <a href="admin.html">Admin</a>
+        <button class="icon-btn" id="themeToggle" title="Switch light / dark">Light</button>
+      </div>
+    </div>
+  </nav>
+
+  <main class="container">
+    <div class="form-wrap">
+      <a href="index.html" class="back" id="backLink">← Back</a>
+
+      <div class="form-card">
+        <!-- Registration form -->
+        <div id="formSection">
+          <h1>Register</h1>
+          <p class="form-sub" id="eventSummary">Loading event…</p>
+
+          <div class="alert alert-error hidden" id="formError"></div>
+
+          <form id="regForm" novalidate>
+            <div class="form-grid">
+              <div class="field full">
+                <label for="name">Full name</label>
+                <input id="name" name="name" type="text" placeholder="e.g. Priya Sharma" autocomplete="name">
+                <span class="error-msg"></span>
+              </div>
+              <div class="field">
+                <label for="reg_no">Registration number</label>
+                <input id="reg_no" name="reg_no" type="text" placeholder="e.g. 2427010123">
+                <span class="error-msg"></span>
+              </div>
+              <div class="field">
+                <label for="phone">Phone</label>
+                <input id="phone" name="phone" type="tel" placeholder="10-digit mobile" maxlength="10">
+                <span class="error-msg"></span>
+              </div>
+              <div class="field full">
+                <label for="email">Email</label>
+                <input id="email" name="email" type="email" placeholder="you@example.com" autocomplete="email">
+                <span class="error-msg"></span>
+              </div>
+              <div class="field">
+                <label for="department">Department</label>
+                <select id="department" name="department">
+                  <option value="">Select…</option>
+                  <option>CSE</option><option>IT</option><option>CCE</option><option>AI &amp; ML</option>
+                  <option>ECE</option><option>EEE</option><option>ME</option><option>Civil</option>
+                  <option>BBA</option><option>Other</option>
+                </select>
+                <span class="error-msg"></span>
+              </div>
+              <div class="field">
+                <label for="year">Year</label>
+                <select id="year" name="year">
+                  <option value="">Select…</option>
+                  <option value="1">1st year</option><option value="2">2nd year</option>
+                  <option value="3">3rd year</option><option value="4">4th year</option>
+                </select>
+                <span class="error-msg"></span>
+              </div>
+            </div>
+            <button type="submit" class="btn btn-primary" id="submitBtn">Confirm registration</button>
+          </form>
+        </div>
+
+        <!-- Shown after a successful registration -->
+        <div id="successSection" class="success-box hidden">
+          <div class="tick">✓</div>
+          <h1>You're in!</h1>
+          <p id="successText"></p>
+          <a href="index.html" class="btn btn-ghost">Browse more events</a>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <footer><div class="container">Campus/Hub — Manipal University Jaipur</div></footer>
+
+  <script src="js/common.js"></script>
+  <script src="js/register.js"></script>
+</body>
+</html>
