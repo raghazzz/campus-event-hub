@@ -1,0 +1,43 @@
+# Run the whole site on your laptop with:  docker compose up -d
+# Then open http://localhost:8080
+services:
+  db:
+    image: mariadb:11
+    environment:
+      MARIADB_ROOT_PASSWORD: campushub
+      MARIADB_DATABASE: campus_event_hub
+    volumes:
+      - ./database.sql:/docker-entrypoint-initdb.d/database.sql:ro   # creates tables + admin on first start
+      - dbdata:/var/lib/mysql                                          # keeps registrations between restarts
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  web:
+    build: .
+    ports:
+      - "8080:80"
+    environment:
+      DB_HOST: db
+      DB_USER: root
+      DB_PASS: campushub
+    volumes:
+      - ./:/var/www/html          # edits to the code show up on refresh
+    depends_on:
+      db:
+        condition: service_healthy
+
+  phpmyadmin:
+    image: phpmyadmin:5
+    ports:
+      - "8081:80"
+    environment:
+      PMA_HOST: db
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  dbdata:

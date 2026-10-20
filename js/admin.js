@@ -2,6 +2,8 @@
 
 let registrations = [];
 let eventsById = {};
+let demo = false; // true when no PHP server is found (see hasBackend() in common.js)
+const DEMO_SESSION = 'campushub-demo-admin';
 
 document.addEventListener('DOMContentLoaded', async () => {
   // Event titles come from the JSON file; registrations come from MySQL.
@@ -18,6 +20,18 @@ document.addEventListener('DOMContentLoaded', async () => {
   document.getElementById('adminSearch').addEventListener('input', renderTable);
   document.getElementById('eventFilter').addEventListener('change', renderTable);
   document.getElementById('regTable').addEventListener('click', handleDelete);
+
+  // Demo mode: no PHP server, so the dashboard runs on browser-saved data.
+  demo = !(await hasBackend());
+  if (demo) {
+    document.querySelector('#loginForm').insertAdjacentHTML('beforebegin',
+      `<div class="demo-note"><b>Demo login:</b> admin / admin123. In demo mode this is checked in the browser;
+       the real version verifies a bcrypt password hash stored in MySQL.</div>`);
+    let signedIn = false;
+    try { signedIn = sessionStorage.getItem(DEMO_SESSION) === '1'; } catch {}
+    signedIn ? showDashboard('admin (demo)') : showLogin();
+    return;
+  }
 
   // Is the admin already logged in (PHP session)?
   try {
@@ -45,6 +59,13 @@ async function showDashboard(username) {
 
 async function login(e) {
   e.preventDefault();
+  if (demo) {
+    const ok = document.getElementById('username').value.trim() === 'admin' &&
+               document.getElementById('password').value === 'admin123';
+    if (!ok) return showLogin('Wrong username or password.');
+    try { sessionStorage.setItem(DEMO_SESSION, '1'); } catch {}
+    return showDashboard('admin (demo)');
+  }
   try {
     const result = await postJSON(API_URL + 'auth.php', {
       action: 'login',
@@ -58,12 +79,23 @@ async function login(e) {
 }
 
 async function logout() {
+  if (demo) {
+    try { sessionStorage.removeItem(DEMO_SESSION); } catch {}
+    registrations = [];
+    return showLogin();
+  }
   await postJSON(API_URL + 'auth.php', { action: 'logout' }).catch(() => {});
   registrations = [];
   showLogin();
 }
 
 async function fetchRegistrations() {
+  if (demo) {
+    registrations = demoStore.all();
+    renderKPIs();
+    renderTable();
+    return;
+  }
   try {
     const data = await getJSON(API_URL + 'registrations.php');
     registrations = data.registrations;
@@ -128,7 +160,8 @@ async function handleDelete(e) {
   if (!confirm('Delete this registration? This cannot be undone.')) return;
 
   try {
-    await getJSON(`${API_URL}registrations.php?id=${btn.dataset.id}`, { method: 'DELETE' });
+    if (demo) demoStore.remove(Number(btn.dataset.id));
+    else await getJSON(`${API_URL}registrations.php?id=${btn.dataset.id}`, { method: 'DELETE' });
     registrations = registrations.filter(r => String(r.id) !== btn.dataset.id);
     renderKPIs();
     renderTable();

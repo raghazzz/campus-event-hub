@@ -1,11 +1,12 @@
 <?php
 // Shared setup for every API file: database connection + JSON helpers.
 
-// XAMPP defaults. Change these if your MySQL uses a password.
-define('DB_HOST', 'localhost');
-define('DB_USER', 'root');
-define('DB_PASS', '');
-define('DB_NAME', 'campus_event_hub');
+// Database settings. Docker passes these in as environment variables;
+// otherwise the XAMPP defaults are used (root user, no password).
+define('DB_HOST', getenv('DB_HOST') ?: 'localhost');
+define('DB_USER', getenv('DB_USER') ?: 'root');
+define('DB_PASS', getenv('DB_PASS') !== false ? getenv('DB_PASS') : '');
+define('DB_NAME', getenv('DB_NAME') ?: 'campus_event_hub');
 
 // Every response from the API is JSON.
 header('Content-Type: application/json; charset=utf-8');

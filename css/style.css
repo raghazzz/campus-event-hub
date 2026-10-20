@@ -316,3 +316,10 @@ footer { border-top: 1px solid var(--line); padding: 24px 0; font-size: .72rem; 
 @media (max-width: 400px) {
   .logo { font-size: 1.3rem; }
 }
+
+/* ---------- Demo-mode banner (shown when no PHP server is found) ---------- */
+.demo-banner { background: var(--panel-2); border-bottom: 1px solid var(--line); font-size: .74rem; color: var(--muted); padding: 9px 0; }
+.demo-banner strong { color: var(--hot); text-transform: uppercase; letter-spacing: .06em; margin-right: 4px; }
+.demo-banner a { color: var(--text); text-decoration: underline; text-underline-offset: 3px; margin-left: 6px; white-space: nowrap; }
+.demo-note { border: 1px dashed var(--line); padding: 12px 14px; font-size: .78rem; color: var(--muted); margin-bottom: 18px; }
+.demo-note b { color: var(--text); }

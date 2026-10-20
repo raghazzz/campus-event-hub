@@ -93,7 +93,10 @@ async function handleSubmit(e) {
   btn.textContent = 'Registering…';
 
   try {
-    const result = await postJSON(API_URL + 'register.php', data);
+    // Real server: PHP validates and saves to MySQL. Demo mode: same rules, saved in the browser.
+    const result = (await hasBackend())
+      ? await postJSON(API_URL + 'register.php', data)
+      : registerInDemo(data);
     document.getElementById('formSection').classList.add('hidden');
     document.getElementById('successSection').classList.remove('hidden');
     document.getElementById('successText').textContent =
@@ -105,6 +108,24 @@ async function handleSubmit(e) {
     btn.disabled = false;
     btn.textContent = 'Confirm registration';
   }
+}
+
+// Demo mode only: apply the same checks as register.php, then save in localStorage.
+function registerInDemo(data) {
+  const all = demoStore.all();
+  if (isPast(currentEvent.date)) throw new Error('Registrations for this event are closed.');
+  if (all.some(r => r.event_id === data.event_id && r.reg_no === data.reg_no)) {
+    throw new Error('This registration number is already registered for this event.');
+  }
+  if (all.filter(r => r.event_id === data.event_id).length >= currentEvent.capacity) {
+    throw new Error('Sorry, this event is full.');
+  }
+  const row = demoStore.add(data);
+  return {
+    ok: true,
+    registration_id: row.id,
+    message: `You're registered for ${currentEvent.title}! (Demo mode: saved in this browser only.)`
+  };
 }
 
 function showFormError(msg) {

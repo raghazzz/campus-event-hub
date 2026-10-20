@@ -19,12 +19,74 @@ function postJSON(url, body) {
   });
 }
 
-const loadEvents = () => getJSON('data/events.json');
-const loadClubs  = () => getJSON('data/clubs.json');
+// Load the JSON data files. If fetch() is blocked (the page was opened by
+// double-clicking it, so the URL starts with file://), use the copies in data/fallback.js.
+async function loadData(file, fallback) {
+  try {
+    return await getJSON('data/' + file);
+  } catch {
+    if (Array.isArray(fallback)) return fallback;
+    throw new Error('Could not load ' + file);
+  }
+}
+const loadEvents = () => loadData('events.json', window.FALLBACK_EVENTS);
+const loadClubs  = () => loadData('clubs.json', window.FALLBACK_CLUBS);
 
-// Registration counts per event from MySQL. Returns {} if the server is offline,
-// so the site still works when opened without XAMPP.
+// ============ Backend detection + demo mode ============
+// The site first tries the PHP API. If PHP isn't there at all (file:// pages, or a
+// static host like GitHub Pages that serves .php files as plain text), the site
+// switches to DEMO MODE: everything still works, but registrations are saved in
+// this browser's localStorage instead of MySQL.
+let backendCheck = null;
+
+function hasBackend() {
+  if (!backendCheck) {
+    backendCheck = fetch(API_URL + 'counts.php')
+      .then(res => res.json().then(data => typeof data === 'object' && 'ok' in data, () => false))
+      .catch(() => false);
+  }
+  return backendCheck;
+}
+
+const DEMO_KEY = 'campushub-demo-registrations';
+
+const demoStore = {
+  // Sample rows (same as database.sql) plus anything registered in this browser.
+  all() {
+    let saved = [];
+    try { saved = JSON.parse(localStorage.getItem(DEMO_KEY)) || []; } catch {}
+    const removed = new Set(saved.filter(r => r.removed).map(r => r.id));
+    const sample = (window.FALLBACK_REGISTRATIONS || []).filter(r => !removed.has(r.id));
+    return [...saved.filter(r => !r.removed), ...sample];
+  },
+  saveRaw(list) {
+    try { localStorage.setItem(DEMO_KEY, JSON.stringify(list)); return true; } catch { return false; }
+  },
+  raw() {
+    try { return JSON.parse(localStorage.getItem(DEMO_KEY)) || []; } catch { return []; }
+  },
+  add(reg) {
+    const list = this.raw();
+    const nextId = Math.max(5, ...this.all().map(r => r.id), ...list.map(r => r.id)) + 1;
+    const row = { id: nextId, ...reg, registered_at: new Date().toISOString().slice(0, 19).replace('T', ' ') };
+    list.unshift(row);
+    this.saveRaw(list);
+    return row;
+  },
+  remove(id) {
+    const list = this.raw().filter(r => r.id !== id);
+    const isSample = (window.FALLBACK_REGISTRATIONS || []).some(r => r.id === id);
+    if (isSample) list.push({ id, removed: true }); // remember deleted sample rows
+    this.saveRaw(list);
+  },
+  counts() {
+    return this.all().reduce((acc, r) => { acc[r.event_id] = (acc[r.event_id] || 0) + 1; return acc; }, {});
+  }
+};
+
+// Registration counts per event: from MySQL normally, from the demo store in demo mode.
 async function loadCounts() {
+  if (!(await hasBackend())) return demoStore.counts();
   try {
     const data = await getJSON(API_URL + 'counts.php');
     return data.counts || {};
@@ -32,6 +94,17 @@ async function loadCounts() {
     return {};
   }
 }
+
+// Thin strip under the navbar so nobody mistakes the demo for the real thing.
+async function showDemoBanner() {
+  if (await hasBackend()) return;
+  const bar = document.createElement('div');
+  bar.className = 'demo-banner';
+  bar.innerHTML = `<div class="container"><strong>Demo mode</strong> · No PHP server found, so registrations are saved in this browser only.
+    <a href="https://github.com/raghazzz/campus-event-hub#how-to-run-docker--easiest-on-a-mac" target="_blank" rel="noopener">Run the full PHP + MySQL version →</a></div>`;
+  document.querySelector('.navbar')?.after(bar);
+}
+document.addEventListener('DOMContentLoaded', showDemoBanner);
 
 // ---- Formatting helpers ----
 function formatDate(iso) {
