@@ -15,6 +15,7 @@
       <a href="index.html" class="logo">Campus<b>/</b>Hub</a>
       <div class="nav-links">
         <a href="index.html" class="active">Events</a>
+        <a href="ticket.html">Ticket</a>
         <a href="admin.html">Admin</a>
         <button class="icon-btn" id="themeToggle" title="Switch light / dark">Light</button>
       </div>
@@ -84,7 +85,16 @@
           <div class="tick">✓</div>
           <h1>You're in!</h1>
           <p id="successText"></p>
-          <a href="index.html" class="btn btn-ghost">Browse more events</a>
+
+          <!-- QR ticket, filled in by register.js -->
+          <div class="qr-ticket" id="qrTicket"></div>
+          <p class="ticket-hint">Show this QR code at the entrance. Save it now: download the ticket or take a screenshot.</p>
+
+          <div class="success-actions">
+            <button class="btn btn-primary" id="downloadTicket">⬇ Download ticket</button>
+            <a class="btn btn-ghost" id="viewTicket" href="#">Open ticket page</a>
+            <a href="index.html" class="btn btn-ghost">Browse more events</a>
+          </div>
         </div>
       </div>
     </div>
@@ -92,6 +102,7 @@
 
   <footer><div class="container">Campus/Hub — Manipal University Jaipur</div></footer>
 
+  <script src="js/vendor/qrcode.js"></script>
   <script src="data/fallback.js"></script>
   <script src="js/common.js"></script>
   <script src="js/register.js"></script>

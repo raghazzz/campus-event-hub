@@ -16,7 +16,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'DELETE') {
     respond(['ok' => true]);
 }
 
-$sql = 'SELECT id, event_id, name, reg_no, email, phone, department, year, registered_at
+$sql = 'SELECT id, event_id, name, reg_no, email, phone, department, year, registered_at, ticket_code, checked_in_at
         FROM registrations';
 
 if (!empty($_GET['event_id'])) {

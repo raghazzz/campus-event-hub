@@ -48,14 +48,21 @@ if ($count >= $event['capacity']) {
 }
 
 // Insert using a prepared statement (protects against SQL injection).
+// Each registration gets a random ticket code that is shown as a QR code.
 $stmt = $conn->prepare(
-    'INSERT INTO registrations (event_id, name, reg_no, email, phone, department, year)
-     VALUES (?, ?, ?, ?, ?, ?, ?)'
+    'INSERT INTO registrations (event_id, name, reg_no, email, phone, department, year, ticket_code)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
 );
-$stmt->bind_param('isssssi', $eventId, $name, $regNo, $email, $phone, $department, $year);
 
-if (!$stmt->execute()) {
-    if ($conn->errno === 1062) { // duplicate key = already registered
+for ($attempt = 0; $attempt < 3; $attempt++) {
+    $ticketCode = makeTicketCode();
+    $stmt->bind_param('isssssis', $eventId, $name, $regNo, $email, $phone, $department, $year, $ticketCode);
+    if ($stmt->execute()) break;
+
+    if ($conn->errno === 1062 && strpos($conn->error, 'uniq_ticket') !== false) {
+        continue; // same ticket code generated twice (extremely rare): try a new one
+    }
+    if ($conn->errno === 1062) { // duplicate (event_id, reg_no) = already registered
         respond(['ok' => false, 'error' => 'This registration number is already registered for this event.'], 409);
     }
     respond(['ok' => false, 'error' => 'Could not save registration.'], 500);
@@ -64,5 +71,6 @@ if (!$stmt->execute()) {
 respond([
     'ok' => true,
     'registration_id' => $stmt->insert_id,
+    'ticket_code' => $ticketCode,
     'message' => "You're registered for {$event['title']}!"
 ], 201);

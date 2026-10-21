@@ -15,6 +15,7 @@
       <a href="index.html" class="logo">Campus<b>/</b>Hub</a>
       <div class="nav-links">
         <a href="index.html">Events</a>
+        <a href="ticket.html">Ticket</a>
         <a href="admin.html" class="active">Admin</a>
         <button class="icon-btn" id="themeToggle" title="Switch light / dark">Light</button>
       </div>
@@ -56,8 +57,30 @@
         </div>
       </div>
 
+      <!-- Door check-in: scan a ticket's QR code or type its code -->
+      <section class="checkin" id="checkinPanel">
+        <div class="checkin-head">
+          <div>
+            <h2>Check-in</h2>
+            <p class="form-sub">Scan a ticket QR with your camera, or type the ticket code.</p>
+          </div>
+          <button class="btn btn-primary" id="scanBtn" type="button">📷 Scan QR</button>
+        </div>
+        <form id="checkinForm" class="lookup">
+          <input id="checkinCode" placeholder="CH-XXXXXXXX or paste a ticket link" autocomplete="off" spellcheck="false">
+          <button class="btn btn-ghost" type="submit">Check in</button>
+        </form>
+        <div class="scanner hidden" id="scanner">
+          <video id="scanVideo" playsinline muted></video>
+          <div class="scan-frame"></div>
+          <button class="btn btn-ghost" id="stopScan" type="button">Stop camera</button>
+        </div>
+        <div id="checkinResult"></div>
+      </section>
+
       <div class="kpis">
         <div class="kpi"><span>Total registrations</span><strong id="kpiTotal">0</strong></div>
+        <div class="kpi"><span>Checked in</span><strong id="kpiChecked">0</strong><small id="kpiCheckedPct"></small></div>
         <div class="kpi"><span>Events with sign-ups</span><strong id="kpiEvents">0</strong></div>
         <div class="kpi"><span>Most popular event</span><strong id="kpiTop" style="font-size:1.1rem;">–</strong><small id="kpiTopCount"></small></div>
       </div>
@@ -77,7 +100,7 @@
           <thead>
             <tr>
               <th>#</th><th>Name</th><th>Reg. No.</th><th>Event</th><th>Dept / Year</th>
-              <th>Email</th><th>Phone</th><th>Registered</th><th></th>
+              <th>Ticket</th><th>Status</th><th>Registered</th><th></th>
             </tr>
           </thead>
           <tbody id="regTable"></tbody>
@@ -88,6 +111,7 @@
 
   <footer><div class="container">Campus/Hub — Manipal University Jaipur</div></footer>
 
+  <script src="js/vendor/jsQR.js"></script>
   <script src="data/fallback.js"></script>
   <script src="js/common.js"></script>
   <script src="js/admin.js"></script>

@@ -20,6 +20,12 @@ document.addEventListener('DOMContentLoaded', async () => {
   document.getElementById('adminSearch').addEventListener('input', renderTable);
   document.getElementById('eventFilter').addEventListener('change', renderTable);
   document.getElementById('regTable').addEventListener('click', handleDelete);
+  document.getElementById('checkinForm').addEventListener('submit', e => {
+    e.preventDefault();
+    checkIn(document.getElementById('checkinCode').value);
+  });
+  document.getElementById('scanBtn').addEventListener('click', startScanner);
+  document.getElementById('stopScan').addEventListener('click', stopScanner);
 
   // Demo mode: no PHP server, so the dashboard runs on browser-saved data.
   demo = !(await hasBackend());
@@ -79,6 +85,7 @@ async function login(e) {
 }
 
 async function logout() {
+  stopScanner();
   if (demo) {
     try { sessionStorage.removeItem(DEMO_SESSION); } catch {}
     registrations = [];
@@ -114,7 +121,11 @@ function renderKPIs() {
   }, {});
   const [topId, topCount] = Object.entries(perEvent).sort((a, b) => b[1] - a[1])[0] || [];
 
+  const checked = registrations.filter(r => r.checked_in_at).length;
   document.getElementById('kpiTotal').textContent = registrations.length;
+  document.getElementById('kpiChecked').textContent = checked;
+  document.getElementById('kpiCheckedPct').textContent = registrations.length
+    ? `${Math.round((checked / registrations.length) * 100)}% of all tickets` : '';
   document.getElementById('kpiEvents').textContent = Object.keys(perEvent).length;
   document.getElementById('kpiTop').textContent = topId ? (eventsById[topId]?.title || `Event ${topId}`) : '–';
   document.getElementById('kpiTopCount').textContent = topId ? `${topCount} registrations` : '';
@@ -126,7 +137,7 @@ function getVisibleRows() {
 
   return registrations.filter(r => {
     if (eventId !== 'all' && String(r.event_id) !== eventId) return false;
-    if (q && ![r.name, r.reg_no, r.email].join(' ').toLowerCase().includes(q)) return false;
+    if (q && ![r.name, r.reg_no, r.email, r.ticket_code].join(' ').toLowerCase().includes(q)) return false;
     return true;
   });
 }
@@ -147,8 +158,10 @@ function renderTable() {
       <td>${escapeHTML(r.reg_no)}</td>
       <td>${escapeHTML(eventsById[r.event_id]?.title || 'Event ' + r.event_id)}</td>
       <td>${escapeHTML(r.department)} · Y${r.year}</td>
-      <td>${escapeHTML(r.email)}</td>
-      <td>${escapeHTML(r.phone)}</td>
+      <td><code>${escapeHTML(r.ticket_code || '–')}</code></td>
+      <td>${r.checked_in_at
+        ? `<span class="pill pill-in">Checked in</span>`
+        : `<span class="pill">Not yet</span>`}</td>
       <td>${new Date(r.registered_at.replace(' ', 'T')).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' })}</td>
       <td><button class="btn btn-danger" data-id="${r.id}">Delete</button></td>
     </tr>`).join('');
@@ -176,10 +189,10 @@ function exportCSV() {
   const rows = getVisibleRows();
   if (rows.length === 0) return showToast('Nothing to export');
 
-  const header = ['ID', 'Name', 'Reg No', 'Event', 'Department', 'Year', 'Email', 'Phone', 'Registered At'];
+  const header = ['ID', 'Name', 'Reg No', 'Event', 'Department', 'Year', 'Email', 'Phone', 'Ticket Code', 'Checked In At', 'Registered At'];
   const lines = rows.map(r => [
     r.id, r.name, r.reg_no, eventsById[r.event_id]?.title || r.event_id,
-    r.department, r.year, r.email, r.phone, r.registered_at
+    r.department, r.year, r.email, r.phone, r.ticket_code || '', r.checked_in_at || '', r.registered_at
   ]);
 
   // Wrap every value in quotes so commas inside names don't break columns.
@@ -194,4 +207,91 @@ function exportCSV() {
   link.click();
   URL.revokeObjectURL(link.href);
   showToast(`Exported ${rows.length} rows`);
+}
+
+// ============ Door check-in ============
+
+// Check a ticket in, from a typed code or a scanned QR link.
+async function checkIn(input) {
+  const code = extractTicketCode(input);
+  if (!code) return showCheckin('error', 'Not a ticket code. Codes look like CH-7F3A9C21.');
+
+  try {
+    const result = demo ? checkInDemo(code) : await postJSON(API_URL + 'ticket.php', { action: 'checkin', code });
+    const t = result.ticket;
+    if (result.status === 'already') {
+      showCheckin('warn', `Already checked in at ${formatStamp(result.checked_in_at)}`, t);
+    } else {
+      showCheckin('ok', 'Checked in. Let them in!', t);
+      // Update the table without reloading.
+      const row = registrations.find(r => r.ticket_code === t.code);
+      if (row) row.checked_in_at = result.checked_in_at;
+      renderKPIs();
+      renderTable();
+    }
+    document.getElementById('checkinCode').value = '';
+  } catch (err) {
+    showCheckin('error', err.message);
+  }
+}
+
+// Demo mode: same logic as api/ticket.php, using the browser's saved data.
+function checkInDemo(code) {
+  const row = demoStore.findByCode(code);
+  if (!row) throw new Error('No ticket found with this code.');
+  const ticket = { code: row.ticket_code, name: row.name, reg_no: row.reg_no, event_title: eventsById[row.event_id]?.title || 'Event ' + row.event_id };
+  if (row.checked_in_at) return { status: 'already', checked_in_at: row.checked_in_at, ticket };
+  const when = nowSQL();
+  demoStore.update(row.id, { checked_in_at: when });
+  return { status: 'checked_in', checked_in_at: when, ticket };
+}
+
+function showCheckin(kind, message, t) {
+  const who = t ? `<div class="checkin-who"><b>${escapeHTML(t.name)}</b> · ${escapeHTML(t.reg_no)}<br>${escapeHTML(t.event_title)} · <code>${escapeHTML(t.code)}</code></div>` : '';
+  document.getElementById('checkinResult').innerHTML =
+    `<div class="checkin-result ${kind}"><strong>${escapeHTML(message)}</strong>${who}</div>`;
+}
+
+// ---- Camera scanner (getUserMedia + jsQR) ----
+let scanStream = null, scanTimer = null, lastScan = '';
+
+async function startScanner() {
+  if (!navigator.mediaDevices?.getUserMedia) {
+    return showCheckin('error', 'This browser cannot use the camera here. Type the code instead.');
+  }
+  try {
+    scanStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+  } catch {
+    return showCheckin('error', 'Camera permission was blocked. Allow camera access, or type the code instead.');
+  }
+  const video = document.getElementById('scanVideo');
+  video.srcObject = scanStream;
+  await video.play();
+  document.getElementById('scanner').classList.remove('hidden');
+  document.getElementById('scanBtn').disabled = true;
+
+  // Grab a frame several times a second and look for a QR code in it.
+  const canvas = document.createElement('canvas');
+  const ctx = canvas.getContext('2d', { willReadFrequently: true });
+  scanTimer = setInterval(() => {
+    if (!video.videoWidth) return;
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    ctx.drawImage(video, 0, 0);
+    const found = jsQR(ctx.getImageData(0, 0, canvas.width, canvas.height).data, canvas.width, canvas.height);
+    if (found && found.data && found.data !== lastScan) {
+      lastScan = found.data;              // ignore the same QR until a different one appears
+      setTimeout(() => (lastScan = ''), 3000);
+      checkIn(found.data);
+    }
+  }, 250);
+}
+
+function stopScanner() {
+  clearInterval(scanTimer);
+  scanStream?.getTracks().forEach(t => t.stop());
+  scanStream = null;
+  document.getElementById('scanner')?.classList.add('hidden');
+  const btn = document.getElementById('scanBtn');
+  if (btn) btn.disabled = false;
 }

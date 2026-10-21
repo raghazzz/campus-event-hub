@@ -21,6 +21,27 @@ if ($conn->connect_error) {
 }
 $conn->set_charset('utf8mb4');
 
+// Databases created before QR tickets were added don't have the ticket columns.
+// Add them automatically (and give old registrations a ticket code) so nobody
+// has to re-import database.sql.
+function ensureSchema($conn) {
+    $res = $conn->query("SHOW COLUMNS FROM registrations LIKE 'ticket_code'");
+    if ($res && $res->num_rows > 0) return;
+    $conn->query("ALTER TABLE registrations
+                    ADD COLUMN ticket_code VARCHAR(12) NULL,
+                    ADD COLUMN checked_in_at TIMESTAMP NULL DEFAULT NULL");
+    $conn->query("UPDATE registrations
+                     SET ticket_code = CONCAT('CH-', UPPER(SUBSTRING(MD5(CONCAT(id, reg_no, RAND())), 1, 8)))
+                   WHERE ticket_code IS NULL");
+    $conn->query("ALTER TABLE registrations ADD UNIQUE KEY uniq_ticket (ticket_code)");
+}
+ensureSchema($conn);
+
+// A random, hard-to-guess ticket code such as CH-7F3A9C21.
+function makeTicketCode() {
+    return 'CH-' . strtoupper(bin2hex(random_bytes(4)));
+}
+
 // Send a JSON response and stop the script.
 function respond($data, $status = 200) {
     http_response_code($status);

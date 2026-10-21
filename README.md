@@ -10,9 +10,13 @@ The live demo runs without a server, so it opens in **demo mode**: browsing, sea
 
 ![Home page](screenshots/home.png)
 
-| Event details | Registration | Admin dashboard |
+| Event details | Registration | QR ticket |
 |---|---|---|
-| ![Event](screenshots/event.png) | ![Register](screenshots/register.png) | ![Admin](screenshots/admin.png) |
+| ![Event](screenshots/event.png) | ![Register](screenshots/register.png) | ![Ticket](screenshots/ticket.png) |
+
+| Admin dashboard with door check-in |
+|---|
+| ![Admin](screenshots/admin.png) |
 
 ## Features
 - Event listing loaded from `data/events.json` with `fetch()`
@@ -24,6 +28,9 @@ The live demo runs without a server, so it opens in **demo mode**: browsing, sea
 - Server-side validation, duplicate check and capacity check in PHP
 - Admin login (hashed passwords, PHP sessions)
 - Admin dashboard: stats, search, filter by event, delete, export to CSV
+- **QR tickets:** every registration gets a unique ticket code (e.g. `CH-7F3A9C21`) shown as a QR code, with a *Download ticket* button that saves it as a PNG
+- **Door check-in:** the admin scans the QR with the laptop camera (`getUserMedia` + jsQR) or types the code; the ticket is marked as used in MySQL, and a second scan shows "already checked in"
+- **Ticket page:** scanning a QR with any phone opens `ticket.html`, which shows whether the ticket is valid or already used
 - "Ticket Booth" design: dark by default with a Light button for dim projectors (saved in `localStorage`), scrolling event ticker, ticket-shaped cards, fully responsive
 
 ## Folder structure
@@ -32,14 +39,17 @@ campus-event-hub/
 ├── index.html        Home page: all events
 ├── event.html        One event's details
 ├── register.html     Registration form
-├── admin.html        Admin login + dashboard
+├── admin.html        Admin login + dashboard + door check-in
+├── ticket.html       Ticket check page (what a scanned QR opens)
 ├── css/style.css     All styles (light + dark theme)
 ├── js/
 │   ├── common.js     Shared helpers: fetch, dates, countdown, theme, demo mode
 │   ├── home.js       Listing, search and filters
 │   ├── event.js      Event details + countdown
-│   ├── register.js   Form validation + submit
-│   └── admin.js      Dashboard, delete, CSV export
+│   ├── register.js   Form validation + submit + QR ticket
+│   ├── ticket.js     Looks up a ticket and shows valid / used
+│   ├── admin.js      Dashboard, delete, CSV export, QR check-in
+│   └── vendor/       qrcode.js (makes QR codes) and jsQR.js (reads them from the camera)
 ├── data/
 │   ├── events.json   Event data
 │   ├── clubs.json    Club data (each club has its own accent colour)
@@ -49,6 +59,7 @@ campus-event-hub/
 │   ├── register.php      POST: save a registration
 │   ├── counts.php        GET: registrations per event
 │   ├── auth.php          Admin login / logout / status
+│   ├── ticket.php        GET: check a ticket · POST: check in (admin only)
 │   └── registrations.php GET list, DELETE one (admin only)
 ├── database.sql      Creates the database, tables and a default admin
 ├── Dockerfile + docker-compose.yml   Run everything with one command
@@ -74,9 +85,14 @@ campus-event-hub/
 
 Admin login: **username `admin`, password `admin123`**.
 
-> Always open the site through `http://localhost/...`. Double-clicking `index.html` opens it as a `file://` page, and the browser blocks `fetch()` there.
+> Open the site through `http://localhost/...` for the full version. Double-clicking `index.html` also works, but in demo mode (see below).
+
+**Already have the database from an older version?** No need to re-import: the first API request adds the new ticket columns and gives existing registrations a ticket code automatically (`ensureSchema()` in `api/config.php`).
 
 If your MySQL root user has a password, set it in `api/config.php`.
+
+## Libraries
+Two small open-source libraries are bundled in `js/vendor/` so the site also works offline: [qrcode-generator](https://github.com/kazuhikoarase/qrcode-generator) (MIT) to draw QR codes, and [jsQR](https://github.com/cozmo/jsQR) (Apache 2.0) to read them from the camera. Everything else is written from scratch.
 
 ## Adding a new event
 Add an object to `data/events.json` with a new `id`, then run `python3 tools/build_fallback.py` so the offline copy in `data/fallback.js` matches, and refresh the page. No database change is needed.
@@ -85,6 +101,7 @@ Add an object to `data/events.json` with a new `id`, then run `python3 tools/bui
 When the page can't reach PHP (opened by double-clicking `index.html`, or hosted on GitHub Pages), `hasBackend()` in `js/common.js` detects it and the site switches to demo mode:
 - Event and club data come from `data/fallback.js` instead of `fetch()`
 - Registrations use the same validation, duplicate and capacity rules, but are stored in `localStorage`
+- QR tickets and check-in work the same way, using the tickets saved in that browser
 - The admin dashboard shows the sample rows plus browser-saved ones (demo login `admin` / `admin123`)
 - A banner under the navbar makes it clear that this is the demo
 
@@ -95,7 +112,9 @@ With PHP + MySQL running, none of this is used and everything goes through the A
 Browser (HTML/CSS/JS)
    │  fetch('data/events.json')         → event and club info (JSON)
    │  fetch('api/counts.php')           → seats taken (JSON from MySQL)
-   │  POST JSON to 'api/register.php'   → PHP validates → INSERT into MySQL
+   │  POST JSON to 'api/register.php'   → PHP validates → INSERT into MySQL → returns ticket code
+   │  qrcode.js draws the ticket QR     → link to ticket.html?code=CH-XXXXXXXX
+   │  camera → jsQR → 'api/ticket.php'  → checks the code → UPDATE checked_in_at
    ▼
 PHP (api/*.php) ──► MySQL (registrations, admins)
 ```

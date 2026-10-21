@@ -4,6 +4,7 @@ services:
   db:
     image: mariadb:11
     environment:
+      TZ: Asia/Kolkata                 # so registration and check-in times show in IST
       MARIADB_ROOT_PASSWORD: campushub
       MARIADB_DATABASE: campus_event_hub
     volumes:
@@ -20,6 +21,7 @@ services:
     ports:
       - "8080:80"
     environment:
+      TZ: Asia/Kolkata
       DB_HOST: db
       DB_USER: root
       DB_PASS: campushub

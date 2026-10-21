@@ -1,0 +1,6 @@
+Third-party libraries bundled so the site works offline:
+
+qrcode.js  - QR Code Generator for JavaScript, (c) 2009 Kazuhiko Arase, MIT license
+            https://github.com/kazuhikoarase/qrcode-generator
+jsQR.js    - jsQR QR code reader, (c) Cosmo Wolfe, Apache License 2.0
+            https://github.com/cozmo/jsQR

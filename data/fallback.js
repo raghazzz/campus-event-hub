@@ -171,7 +171,9 @@ window.FALLBACK_REGISTRATIONS = [
     "phone": "9876543210",
     "department": "CSE",
     "year": 3,
-    "registered_at": "2026-10-19 20:55:00"
+    "registered_at": "2026-10-19 20:55:00",
+    "ticket_code": "CH-7F3A9C21",
+    "checked_in_at": null
   },
   {
     "id": 2,
@@ -182,7 +184,9 @@ window.FALLBACK_REGISTRATIONS = [
     "phone": "9876543211",
     "department": "IT",
     "year": 2,
-    "registered_at": "2026-10-19 20:55:00"
+    "registered_at": "2026-10-19 20:55:00",
+    "ticket_code": "CH-B84E1D07",
+    "checked_in_at": null
   },
   {
     "id": 3,
@@ -193,7 +197,9 @@ window.FALLBACK_REGISTRATIONS = [
     "phone": "9876543212",
     "department": "ECE",
     "year": 1,
-    "registered_at": "2026-10-19 20:55:00"
+    "registered_at": "2026-10-19 20:55:00",
+    "ticket_code": "CH-2C6D5F90",
+    "checked_in_at": null
   },
   {
     "id": 4,
@@ -204,7 +210,9 @@ window.FALLBACK_REGISTRATIONS = [
     "phone": "9876543213",
     "department": "EEE",
     "year": 2,
-    "registered_at": "2026-10-19 20:55:00"
+    "registered_at": "2026-10-19 20:55:00",
+    "ticket_code": "CH-E19A4B36",
+    "checked_in_at": null
   },
   {
     "id": 5,
@@ -215,6 +223,8 @@ window.FALLBACK_REGISTRATIONS = [
     "phone": "9876543214",
     "department": "ME",
     "year": 4,
-    "registered_at": "2026-10-19 20:55:00"
+    "registered_at": "2026-10-19 20:55:00",
+    "ticket_code": "CH-5D02C8AF",
+    "checked_in_at": null
   }
 ];

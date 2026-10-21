@@ -51,38 +51,169 @@ function hasBackend() {
 const DEMO_KEY = 'campushub-demo-registrations';
 
 const demoStore = {
-  // Sample rows (same as database.sql) plus anything registered in this browser.
-  all() {
-    let saved = [];
-    try { saved = JSON.parse(localStorage.getItem(DEMO_KEY)) || []; } catch {}
-    const removed = new Set(saved.filter(r => r.removed).map(r => r.id));
-    const sample = (window.FALLBACK_REGISTRATIONS || []).filter(r => !removed.has(r.id));
-    return [...saved.filter(r => !r.removed), ...sample];
+  // Saved list holds: full rows registered in this browser, {id, removed:true} markers
+  // for deleted sample rows, and {id, patch:{...}} changes (e.g. check-in) to sample rows.
+  raw() {
+    try { return JSON.parse(localStorage.getItem(DEMO_KEY)) || []; } catch { return []; }
   },
   saveRaw(list) {
     try { localStorage.setItem(DEMO_KEY, JSON.stringify(list)); return true; } catch { return false; }
   },
-  raw() {
-    try { return JSON.parse(localStorage.getItem(DEMO_KEY)) || []; } catch { return []; }
+  // Sample rows (same as database.sql) plus anything registered in this browser.
+  all() {
+    const saved = this.raw();
+    const removed = new Set(saved.filter(r => r.removed).map(r => r.id));
+    const patches = {};
+    saved.filter(r => r.patch).forEach(r => (patches[r.id] = { ...patches[r.id], ...r.patch }));
+    const own = saved.filter(r => !r.removed && !r.patch);
+    const sample = (window.FALLBACK_REGISTRATIONS || [])
+      .filter(r => !removed.has(r.id))
+      .map(r => ({ ...r, ...patches[r.id] }));
+    return [...own, ...sample];
+  },
+  isSample(id) {
+    return (window.FALLBACK_REGISTRATIONS || []).some(r => r.id === id);
   },
   add(reg) {
     const list = this.raw();
     const nextId = Math.max(5, ...this.all().map(r => r.id), ...list.map(r => r.id)) + 1;
-    const row = { id: nextId, ...reg, registered_at: new Date().toISOString().slice(0, 19).replace('T', ' ') };
+    const row = {
+      id: nextId, ...reg,
+      ticket_code: makeTicketCode(),
+      checked_in_at: null,
+      registered_at: nowSQL()
+    };
     list.unshift(row);
     this.saveRaw(list);
     return row;
   },
+  update(id, changes) {
+    const list = this.raw();
+    if (this.isSample(id)) {
+      list.push({ id, patch: changes });
+    } else {
+      const row = list.find(r => r.id === id && !r.removed && !r.patch);
+      if (row) Object.assign(row, changes);
+    }
+    this.saveRaw(list);
+  },
   remove(id) {
     const list = this.raw().filter(r => r.id !== id);
-    const isSample = (window.FALLBACK_REGISTRATIONS || []).some(r => r.id === id);
-    if (isSample) list.push({ id, removed: true }); // remember deleted sample rows
+    if (this.isSample(id)) list.push({ id, removed: true }); // remember deleted sample rows
     this.saveRaw(list);
+  },
+  findByCode(code) {
+    return this.all().find(r => r.ticket_code === code) || null;
   },
   counts() {
     return this.all().reduce((acc, r) => { acc[r.event_id] = (acc[r.event_id] || 0) + 1; return acc; }, {});
   }
 };
+
+// Current time as "YYYY-MM-DD HH:MM:SS" (the same format MySQL returns).
+function nowSQL() {
+  const d = new Date(), p = n => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}`;
+}
+
+// "2026-10-21 16:41:04" -> "21 Oct, 4:41 pm"
+function formatStamp(sql) {
+  const d = new Date(String(sql).replace(' ', 'T'));
+  return d.toLocaleString('en-IN', { day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' });
+}
+
+// ============ QR tickets ============
+// Random ticket code like CH-7F3A9C21 (demo mode only; the real ones come from PHP).
+function makeTicketCode() {
+  const bytes = new Uint8Array(4);
+  crypto.getRandomValues(bytes);
+  return 'CH-' + [...bytes].map(b => b.toString(16).padStart(2, '0')).join('').toUpperCase();
+}
+
+// Pull a ticket code out of anything: a typed code, or a whole scanned link.
+function extractTicketCode(text) {
+  const m = String(text || '').match(/CH-[0-9A-F]{8}/i);
+  return m ? m[0].toUpperCase() : null;
+}
+
+// The link stored inside each QR code: opens ticket.html for that ticket.
+function ticketURL(code) {
+  return new URL('ticket.html?code=' + encodeURIComponent(code), location.href).href;
+}
+
+// Build the QR matrix for a piece of text (uses js/vendor/qrcode.js).
+function makeQR(text) {
+  const qr = qrcode(0, 'M'); // 0 = pick the smallest size that fits, M = medium error correction
+  qr.addData(text);
+  qr.make();
+  return qr;
+}
+
+// QR code as an inline SVG string, for showing on the page.
+function qrSVG(text, cellSize = 5) {
+  return makeQR(text).createSvgTag({ cellSize, margin: 2, scalable: true });
+}
+
+// Draw a downloadable ticket image (PNG) with the QR code on a canvas.
+function downloadTicketPNG(t) {
+  const W = 1000, H = 420, STUB = 330;
+  const c = document.createElement('canvas');
+  c.width = W; c.height = H;
+  const g = c.getContext('2d');
+
+  g.fillStyle = '#1a1a17'; g.fillRect(0, 0, W, H);           // ticket body
+  g.fillStyle = '#d4ff3a'; g.fillRect(0, 0, W, 14);           // top edge
+  g.fillStyle = '#ffffff'; g.fillRect(W - STUB, 14, STUB, H - 14); // stub for the QR
+
+  // perforation
+  g.strokeStyle = '#0e0e0c'; g.setLineDash([10, 8]); g.lineWidth = 3;
+  g.beginPath(); g.moveTo(W - STUB, 14); g.lineTo(W - STUB, H); g.stroke(); g.setLineDash([]);
+  g.fillStyle = '#0e0e0c';
+  [[W - STUB, 0], [W - STUB, H]].forEach(([x, y]) => { g.beginPath(); g.arc(x, y, 18, 0, Math.PI * 2); g.fill(); });
+
+  // text
+  const mono = '"Space Mono", "Courier New", monospace', display = '"Big Shoulders Display", Impact, sans-serif';
+  g.fillStyle = '#d4ff3a'; g.font = `bold 20px ${mono}`; g.fillText('CAMPUS/HUB  ·  EVENT TICKET', 44, 70);
+  g.fillStyle = '#f2f0e6'; g.font = `900 52px ${display}`;
+  const titleEnd = wrapText(g, t.eventTitle.toUpperCase(), 44, 135, W - STUB - 88, 54, 2);
+  g.font = `20px ${mono}`; g.fillStyle = '#8d8a7d';
+  g.fillText(t.when, 44, titleEnd + 52);
+  g.fillText(t.venue, 44, titleEnd + 82);
+  g.fillStyle = '#f2f0e6'; g.font = `bold 24px ${mono}`;
+  g.fillText(t.name, 44, 350);
+  g.fillStyle = '#8d8a7d'; g.font = `18px ${mono}`;
+  g.fillText(`Reg. No. ${t.regNo}`, 44, 382);
+
+  // QR on the stub
+  const qr = makeQR(ticketURL(t.code)), n = qr.getModuleCount(), size = 240, cell = size / n;
+  const qx = W - STUB + (STUB - size) / 2, qy = 48;
+  g.fillStyle = '#0e0e0c';
+  for (let r = 0; r < n; r++) for (let col = 0; col < n; col++) {
+    if (qr.isDark(r, col)) g.fillRect(qx + col * cell, qy + r * cell, Math.ceil(cell), Math.ceil(cell));
+  }
+  g.font = `bold 22px ${mono}`; g.textAlign = 'center';
+  g.fillText(t.code, W - STUB / 2, qy + size + 50);
+  g.textAlign = 'left';
+
+  const link = document.createElement('a');
+  link.download = `ticket-${t.code}.png`;
+  link.href = c.toDataURL('image/png');
+  link.click();
+}
+
+// Canvas helper: wrap long text over several lines.
+function wrapText(g, text, x, y, maxW, lineH, maxLines) {
+  const words = text.split(' '); let line = '', lines = 0;
+  for (const w of words) {
+    const test = line ? line + ' ' + w : w;
+    if (g.measureText(test).width > maxW && line) {
+      g.fillText(line, x, y); y += lineH; line = w;
+      if (++lines >= maxLines - 1) break;
+    } else line = test;
+  }
+  g.fillText(line, x, y);
+  return y; // baseline of the last line, so the next text can follow it
+}
 
 // Registration counts per event: from MySQL normally, from the demo store in demo mode.
 async function loadCounts() {

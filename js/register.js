@@ -101,6 +101,14 @@ async function handleSubmit(e) {
     document.getElementById('successSection').classList.remove('hidden');
     document.getElementById('successText').textContent =
       `${result.message} Your registration ID is #${result.registration_id}. See you on ${formatDate(currentEvent.date)}.`;
+    showTicket({
+      code: result.ticket_code,
+      name: data.name,
+      regNo: data.reg_no,
+      eventTitle: currentEvent.title,
+      when: `${formatDate(currentEvent.date)}, ${formatTime(currentEvent.date)}`,
+      venue: currentEvent.venue
+    });
   } catch (err) {
     showFormError(err.message === 'Failed to fetch'
       ? 'Cannot reach the server. Make sure Apache and MySQL are running in XAMPP.'
@@ -122,6 +130,7 @@ function registerInDemo(data) {
   }
   const row = demoStore.add(data);
   return {
+    ticket_code: row.ticket_code,
     ok: true,
     registration_id: row.id,
     message: `You're registered for ${currentEvent.title}! (Demo mode: saved in this browser only.)`
@@ -136,4 +145,25 @@ function showFormError(msg) {
 
 function hideFormError() {
   document.getElementById('formError').classList.add('hidden');
+}
+
+// Show the QR ticket after a successful registration.
+function showTicket(t) {
+  document.getElementById('qrTicket').innerHTML = `
+    <div class="qr-ticket-main">
+      <span class="label">Event ticket</span>
+      <h3>${escapeHTML(t.eventTitle)}</h3>
+      <div class="info">
+        <span>When</span><b>${escapeHTML(t.when)}</b>
+        <span>Venue</span><b>${escapeHTML(t.venue)}</b>
+        <span>Name</span><b>${escapeHTML(t.name)}</b>
+        <span>Reg. No.</span><b>${escapeHTML(t.regNo)}</b>
+      </div>
+    </div>
+    <div class="qr-ticket-stub">
+      <div class="qr-box">${qrSVG(ticketURL(t.code))}</div>
+      <code>${escapeHTML(t.code)}</code>
+    </div>`;
+  document.getElementById('viewTicket').href = 'ticket.html?code=' + encodeURIComponent(t.code);
+  document.getElementById('downloadTicket').onclick = () => downloadTicketPNG(t);
 }
